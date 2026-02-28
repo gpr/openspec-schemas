@@ -207,7 +207,7 @@ apply:
   requires: [tasks]
   tracks: tasks.md
   instruction: |
-    Execute tasks using the contract-first team model:
+    First create a Worktree and then launch a Team with 1 Teammate per <component>.
 
     1. **Leader completes Group 0 first** — implement all contracts and shared interfaces.
        Only after Group 0 is fully committed should component work begin.
@@ -219,3 +219,4 @@ apply:
     4. **Respect `<!-- blockedBy: -->` annotations** — do not start a task until
        the referenced task is marked complete.
     5. Mark tasks complete as you go. Pause if you hit blockers or need clarification.
+    6. Each Teammate commit its changes when completing it's tasks

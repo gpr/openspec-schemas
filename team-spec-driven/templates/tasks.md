@@ -1,6 +1,3 @@
-
-IMPORTANT: To complete these tasks launch a Team with 1 Teammate per Component.
-
 ## 0. Contracts & Shared Interfaces
 
 - [ ] 0.1 <!-- Contract/shared interface task -->
