@@ -9,16 +9,15 @@ artifacts:
     instruction: |
       Create the proposal document that establishes WHY this change is needed.
 
-      **Component Discovery**: Read the C4 Component diagram from the project's CLAUDE.md.
-      Extract `Component(...)` nodes and `Rel(...)` edges to identify affected components
-      and their relationships.
+      **Component Discovery**: Read the Mermaid C4 Component diagram from the project's CLAUDE.md.
+      Extract <components> and their relationships.
 
       Sections:
       - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why now?
       - **What Changes**: Bullet list of changes. Be specific about new capabilities, modifications, or removals. Mark breaking changes with **BREAKING**.
       - **Components Affected**: Table listing each affected component, its container boundary,
-        and cross-component relationships (from `Rel(...)` edges). One row per component.
-      - **Contracts**: List cross-component contracts identified from `Rel(...)` edges.
+        and cross-component relationships. One row per component.
+      - **Contracts**: List cross-component contracts.
         Each contract becomes a spec owned by the Leader. Use `contract-` prefix for naming
         (e.g., `contract-auth-api`, `contract-event-schema`).
       - **Capabilities**: Identify which specs will be created or modified:
@@ -130,8 +129,8 @@ artifacts:
       Sections:
       - **Context**: Background, current state, constraints, stakeholders
       - **Goals / Non-Goals**: What this design achieves and explicitly excludes
-      - **Component Dependency Map**: Table showing each component and the contracts it depends on
-        (derived from `Rel(...)` edges in the C4 diagram). Columns: Component | Depends On (contracts) | Direction.
+      - **Component Dependency Map**: Table showing each component and the contracts it depends on.
+        Columns: Component | Depends On (contracts) | Direction.
       - **Contracts** (Leader-owned): One subsection per contract. Define data shapes, API signatures,
         error handling, and versioning. These are implemented FIRST before any component work begins.
       - **Component Design**: One `### <Component Name>` subsection per affected component.
