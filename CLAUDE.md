@@ -145,6 +145,12 @@ When generating any artifact, context, rules, template, and instructions are inj
 
 ## Creating a New Schema
 
+Forking `spec-driven` with the CLI:
+
+```sh
+openspec schema fork spec-driven <schema-name>
+```
+
 Bootstrap with the CLI:
 
 ```sh
@@ -157,19 +163,24 @@ After bootstrapping:
 
 1. Fill in `schema.yaml` artifact instructions and the `apply` section
 2. Fill in each template in `templates/`
-3. Create the symlink for CLI discovery:
+3. Create `<schema-name>/CLAUDE.md` with schema-specific constraints and conventions
+4. Create the symlink for CLI discovery:
 
    ```sh
    ln -s ../../<schema-name> openspec/schemas/<schema-name>
    ```
 
-4. Validate:
+5. Validate:
 
    ```sh
    openspec schema validate <schema-name>
    ```
 
 Use `team-spec-driven/` as the reference implementation.
+
+## Working on a Schema
+
+When working on a specific schema, only read files inside that schema's directory (`<schema-name>/`). Do not read or reference other schemas — their conventions differ and will pollute your context. Each schema's `CLAUDE.md` contains its specific constraints and rules.
 
 ## Validation
 
@@ -204,7 +215,5 @@ rm -rf openspec/changes/<schema-name>-test
 
 Things that break silently if wrong:
 
-- **Scenario headings must be `####`** (exactly 4 hashtags). Using `###` or bullets causes scenarios to be silently dropped.
 - **Task checkboxes must be `- [ ]`** format. The apply phase parses these to track progress — other formats are invisible.
-- **Spec files require YAML front matter** with `name`, `description`, `component`, and `dependencies` fields.
 - **Symlink must exist** in `openspec/schemas/` for CLI discovery. Without it, `openspec schema validate` cannot find the schema.

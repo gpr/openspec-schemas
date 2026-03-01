@@ -22,3 +22,10 @@ The project's CLAUDE.md contains a Mermaid `C4Component` diagram with `Component
 | tasks | Group 0: Contracts (Leader, first); Groups 1-N: one per component (parallel Teammates) |
 
 These rules are embedded in `schema.yaml` instruction fields.
+
+## Key Constraints
+
+Things that break silently if wrong:
+
+- **Scenario headings must be `####`** (exactly 4 hashtags). Using `###` or bullets causes scenarios to be silently dropped.
+- **Spec files require YAML front matter** with `name`, `description`, `component`, and `dependencies` fields.
