@@ -93,6 +93,8 @@ artifacts:
 apply:
   requires: [tasks]
   tracks: tasks.md
+  instruction: |
+    ...
 ```
 
 ## Artifact Composition Rules
