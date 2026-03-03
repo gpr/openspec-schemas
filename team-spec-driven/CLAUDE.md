@@ -12,11 +12,11 @@ Each artifact has a template in `templates/` and its instruction + dependency ch
 
 ## Component-Based Team Rules
 
-The project's CLAUDE.md contains a Mermaid C4 Component diagram (`<components>`). The schema uses this to drive a **contract-first parallel team model**: the Leader defines cross-component contracts first, then Teammates work on their components in parallel.
+The project's CLAUDE.md contains a Mermaid `C4Component` diagram with `Component(...)` entries and `Rel(...)` edges. The schema uses this to drive a **contract-first parallel team model**: the Leader defines cross-component contracts first, then Teammates work on their components in parallel.
 
 | Artifact | Rule |
 |----------|------|
-| proposal | Map capabilities to `<components>` from C4 diagram; identify cross-component contracts |
+| proposal | Map capabilities to `Component(...)` entries from the `C4Component` diagram; identify cross-component contracts |
 | spec | YAML front matter with `component` field; contract specs owned by Leader |
 | design | Component Dependency Map, File Ownership Table, per-component design sections |
 | tasks | Group 0: Contracts (Leader, first); Groups 1-N: one per component (parallel Teammates) |

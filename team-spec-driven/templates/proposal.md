@@ -8,11 +8,11 @@
 
 ## Components Affected
 
-<!-- Read the C4 Component diagram from CLAUDE.md. List each affected component. -->
+<!-- Read the C4Component diagram from CLAUDE.md. List each affected Component(...) entry. -->
 
 | Component | Container | Cross-Component Relationships |
 |-----------|-----------|-------------------------------|
-| <!-- component name --> | <!-- container boundary --> | <!-- Rel(...) edges involving this component --> |
+| <!-- Component alias/label --> | <!-- Container_Boundary this component belongs to --> | <!-- Rel(...) edges involving this component --> |
 
 ## Contracts
 

@@ -12,7 +12,7 @@
 
 ## Component Dependency Map
 
-<!-- Derived from Rel(...) edges in the C4 diagram -->
+<!-- Derived from Rel(...) and BiRel(...) edges in the C4Component diagram -->
 
 | Component | Depends On (contracts) | Direction |
 |-----------|----------------------|-----------|

@@ -9,8 +9,16 @@ artifacts:
     instruction: |
       Create the proposal document that establishes WHY this change is needed.
 
-      **Component Discovery**: Read the Mermaid C4 Component diagram from the project's CLAUDE.md.
-      Extract <components> and their relationships.
+      **Component Discovery**: Read the Mermaid `C4Component` diagram from the project's CLAUDE.md.
+      Extract each `Component(alias, "Label", ...)` entry and their `Rel(...)` / `BiRel(...)` edges.
+      Components are grouped inside `Container_Boundary(alias, "Label")` blocks.
+
+      **C4Component Cheat-Sheet** (for parsing the diagram):
+      - Diagram keyword: `C4Component`
+      - Components: `Component(alias, "Label", ?techn, ?descr)` — variants: `ComponentDb`, `ComponentQueue`, `Component_Ext`
+      - Boundaries: `Container_Boundary(alias, "Label") { ... }` — groups components by container
+      - Relationships: `Rel(from, to, "label", ?techn)` — variants: `BiRel`, `Rel_Back`, directional: `Rel_U`, `Rel_D`, `Rel_L`, `Rel_R`
+      - `from`/`to` in `Rel(...)` reference the `alias` parameter of `Component(...)` definitions
 
       Sections:
       - **Why**: 1-2 sentences on the problem or opportunity. What problem does this solve? Why now?
