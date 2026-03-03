@@ -140,6 +140,23 @@ apply:
     and are the sole writer to tasks.md. Teammates report completion via
     `SendMessage` to you; you mark checkboxes.
 
+    Terminology: **teammate** = an agent spawned within the Team for a
+    role (Implementer, Tester, Documenter). **verifier** = a fresh agent
+    spawned for Phase 2 review, independent of any prior teammate.
+
+    ## Execution Flow
+
+    ```
+    Phase 0 (Load Context)
+      → Step Loop (for each step):
+          → Phase 1T (Team Execution) — if 2+ role subgroups with 4+ total tasks
+          → Phase 1S (Single-Agent)   — otherwise
+      → Phase 2 (Final Verification)
+    ```
+
+    Phase 1T and Phase 1S are called **from within** the Step Loop — they
+    are not top-level sequential phases.
+
     ## Execution Rules
 
     - Steps are sequential — complete step N before starting step N+1.
@@ -147,22 +164,37 @@ apply:
     - All teammates share the same worktree — do NOT use `isolation: "worktree"`.
     - **Only the coordinator edits tasks.md.** Teammates send completion
       messages; you mark `- [x]` to avoid concurrent-write races.
+    - **File conflict protocol**: If a task requires editing a file owned
+      by another role, the teammate MUST flag it to the coordinator via
+      `SendMessage` instead of editing directly. The coordinator serializes
+      those edits after the owning role completes its work on that file.
     - Keep changes minimal and scoped to each task.
     - Pause if you hit blockers or need clarification.
-    - If a teammate errors out or stops responding, complete its pending
-      tasks yourself before proceeding.
+    - **Teammate timeout**: If a teammate has not reported completion
+      within 3 minutes of spawning (or of receiving a new step assignment),
+      assume failure — complete its pending tasks yourself before proceeding.
 
     ## Phase 0: Load Context
 
-    1. Read all context files listed above.
-    2. Parse tasks.md to identify steps (`## N. <Step Name>`) and their
-       role subgroups (`### Implementation`, `### Tests`, `### Documentation`).
-    3. **Validate**: Confirm at least one step was found and every `- [ ]`
-       task belongs to a recognized role subgroup. If validation fails,
-       stop and ask the user.
-    4. Build a list of steps with pending tasks. If tasks.md contains
-       `- [x]` tasks from a prior run, treat those as complete and skip
-       finished steps.
+    1. Read all context files listed above using parallel tool calls
+       (all reads in a single message).
+    2. **Validate context files**: Confirm each file exists and is
+       non-empty. `proposal.md` and `tasks.md` are required — if either
+       is missing or empty, stop and ask the user. `design.md` and
+       `specs/` are optional — note which are absent so later phases
+       can skip references to them (e.g., Parallelization Strategy,
+       spec-coverage checks).
+    3. Parse tasks.md to identify steps (`## N. <Step Name>`) and their
+       role subgroups. Only these three subgroup names are recognized:
+       `### Implementation`, `### Tests`, `### Documentation`.
+    4. **Validate structure**: Confirm at least one step was found and
+       every `- [ ]` task belongs to a recognized role subgroup. If
+       validation fails, stop and ask the user. On resume (when `- [x]`
+       tasks exist from a prior run), only validate remaining `- [ ]`
+       tasks — skip structural re-checks of completed items.
+    5. Build a list of steps with pending tasks. Treat `- [x]` tasks
+       as complete and skip fully finished steps. If no pending tasks
+       remain, skip the Step Loop and proceed directly to Phase 2.
 
     Do NOT make a global team-vs-single-agent decision here. The decision
     is made per step in the loop below.
@@ -172,30 +204,44 @@ apply:
     Process steps sequentially. For each step with pending tasks:
 
     1. **Assess**: Count non-empty role subgroups (subgroups with at least
-       one pending `- [ ]` task).
+       one pending `- [ ]` task) and total pending tasks across all
+       subgroups.
     2. **Decide execution mode**:
-       - **2+ role subgroups** → Team Execution (Phase 1).
-       - **1 role subgroup** → Single-Agent Execution (Phase S).
+       - **2+ role subgroups AND 4+ total pending tasks** → Team
+         Execution (Phase 1).
+       - **Otherwise** (1 role subgroup, or fewer than 4 total tasks) →
+         Single-Agent Execution (Phase S).
     3. Execute the step using the chosen mode.
-    4. Verify all tasks in the step are marked `- [x]` before proceeding.
+    4. **Post-step verification** (Phase 1 only): Verify all tasks in the
+       step are marked `- [x]` before proceeding. Skip this check for
+       Phase S — the coordinator marks checkboxes directly and already
+       knows the completion state.
 
     ## Phase 1: Team Execution (per step)
 
-    Used when a step has 2+ non-empty role subgroups.
+    Used when a step has 2+ non-empty role subgroups and 4+ total pending
+    tasks.
 
     1. **Lazy team creation**: If no Team exists yet, create one via
        `TeamCreate`. The Team is created once and reused for all
        subsequent multi-role steps.
-    2. **Assign file ownership** before spawning agents. Use the design's
-       Parallelization Strategy if available, otherwise default to:
+    2. **Assign file ownership** before dispatching work. If `design.md`
+       exists, use its `## Parallelization Strategy` section for ownership
+       rules. Otherwise default to:
        - Implementer owns source code files.
        - Tester owns test files.
        - Documenter owns documentation files (except tasks.md).
-       Include ownership boundaries in each agent's prompt. If a task
-       requires editing another role's files, flag it to the coordinator
-       for sequential handling.
-    3. Spawn one teammate per non-empty role subgroup via `Agent` with
-       `team_name`. Spawn all in a single message for concurrency.
+       Include ownership boundaries in each agent's prompt.
+    3. **Dispatch work to teammates**:
+       - **First multi-role step**: Spawn one teammate per non-empty role
+         subgroup via `Agent` with `team_name`. Spawn all in a single
+         message for concurrency.
+       - **Subsequent multi-role steps**: Reuse existing teammates by
+         sending new assignments via `SendMessage`. Each message MUST
+         include: (a) an explicit instruction to disregard all prior step
+         context, (b) the new step's tasks and file ownership boundaries,
+         and (c) any updated context (e.g., files created in prior steps).
+         Only spawn a new agent for a role that has no existing teammate.
        - **Implementer**: `### Implementation` tasks for this step.
        - **Tester**: `### Tests` tasks for this step. Write tests from
          specs (behavior-driven).
@@ -211,11 +257,12 @@ apply:
 
     ## Phase S: Single-Agent Execution (per step)
 
-    Used when a step has only one non-empty role subgroup.
+    Used when a step has only one non-empty role subgroup, or fewer than
+    4 total pending tasks.
 
-    1. Complete all pending tasks in the single role subgroup.
+    1. Complete all pending tasks in the step yourself.
     2. Mark each checkbox `- [x]` in tasks.md as you go.
-    3. Self-review before proceeding:
+    3. Self-review before moving to the next step:
        - Implementation: verify it builds/runs and matches spec requirements.
        - Tests: verify tests pass and cover the spec scenarios.
        - Documentation: verify examples are accurate and match behavior.
@@ -223,8 +270,15 @@ apply:
 
     ## Phase 2: Final Verification
 
-    After ALL steps are complete (every task is `- [x]`), spawn parallel
-    verification agents — one per mandate check — for a holistic review.
+    After ALL steps are complete (every task is `- [x]`):
+
+    **Teardown role agents**: If a Team exists with active role teammates,
+    send each a `shutdown_request` via `SendMessage` and wait for
+    confirmation before spawning verifiers. This prevents stale agents
+    from interfering with verifier communication.
+
+    Then spawn parallel verification agents — one per mandate check — for
+    a holistic review.
 
     1. **Determine applicable checks**: Inspect which artifacts exist:
        - `proposal.md` — always exists → spawn `verifier-scope`.
@@ -248,22 +302,26 @@ apply:
        - **verifier-design**: Read `design.md` and the actual code
          changes. Check: Key decisions were followed. File ownership was
          respected. Open questions are resolved or deferred.
-       - **verifier-tasks**: Read `tasks.md`. Check: Every `- [x]` task
-         is genuinely complete (artifact or code exists). No `- [ ]`
-         tasks remain.
+       - **verifier-tasks**: Read `tasks.md`. Check: No `- [ ]` tasks
+         remain. Spot-check a sample of `- [x]` tasks to confirm the
+         corresponding artifact or code exists (full cross-reference is
+         covered by verifier-scope and verifier-requirements).
     3. **Verifier Reports**: Each agent sends its result via
        `SendMessage` to the coordinator independently:
        - **PASS**: No issues found for this check.
        - **FLAG**: Specific finding with artifact reference and code
          location.
     4. **Remediation** (if any FLAG exists):
-       a. Collect all FLAGs from all verifiers. Create fix tasks grouped
-          by finding. Complete them yourself or assign to an existing
-          teammate if the Team is still active.
+       a. Collect all FLAGs from all verifiers. Handle each as an ad-hoc
+          fix — complete them yourself (do not add new entries to
+          tasks.md). Group fixes by finding for efficiency.
        b. After fixes, re-spawn only the verifiers that reported FLAG
           (same names, same checks). Spawn all re-runs in a single
           message.
-       c. If issues remain after this second pass, flag them for the
-          user and proceed.
-    5. **Completion**: All PASS (or remediation exhausted) means the
-       apply phase is complete.
+       c. If issues remain after this second pass, surface all remaining
+          FLAGs to the user with artifact references and code locations.
+          Declare the apply phase complete — do not block waiting for
+          user response.
+    5. **Completion**: All PASS (or remediation exhausted) → send
+       `shutdown_request` to all active verifiers, then delete the Team
+       via `TeamDelete` if one exists. The apply phase is complete.
